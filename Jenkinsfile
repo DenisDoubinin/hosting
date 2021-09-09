@@ -5,7 +5,7 @@ pipeline{
     stage('Clone git repo'){
       steps{
         git url: 'git@github.com:DenisDoubinin/hosting.git',
-          credentialsId: 'hosting-github-key'
+          credentialsId: 'github-key'
       }
     }
     stage('Create VM'){

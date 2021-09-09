@@ -1,0 +1,61 @@
+- hosts: project
+  gather_facts: False
+  roles:
+    - docker        
+    - workdir
+    - bkpdir
+  
+  tasks:
+
+    - name: Change timeout settings
+      shell: |
+        echo "DOCKER_CLIENT_TIMEOUT=120" > .env
+        echo "COMPOSE_HTTP_TIMEOUT=120" >> .env
+      args:
+        chdir: /data/docker
+      become: yes
+
+    - name: Copy docker-compose for proxy creation
+      copy:
+        src: /var/lib/jenkins/hosting/docker-compose-proxy.yaml
+        dest: /data/docker
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+      become: yes
+
+    - name: Copy nginx config
+      copy:
+        src: /var/lib/jenkins/hosting/nginx/default.nginx
+        dest: /data/docker
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+      become: yes
+
+    - name: DNS privelege configuration
+      shell: echo "127.0.0.1	wp.local phpmyadmin.local" >> /etc/hosts
+      become: yes      
+      
+    - name: Proxy build
+      shell: docker-compose -f docker-compose-proxy.yaml up -d
+      args:
+        chdir: /data/docker
+      become: yes
+
+    - name: Copy docker-compose file fo services creation
+      copy:
+        src: /var/lib/jenkins/hosting/docker-compose-serv.yaml
+        dest: /data/docker
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+      become: yes
+
+
+    - name: Services build
+      shell: docker-compose -f docker-compose-serv.yaml up -d
+      args:
+        chdir: /data/docker
+      become: yes        
+

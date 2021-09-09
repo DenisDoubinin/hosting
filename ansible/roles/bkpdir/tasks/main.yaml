@@ -1,0 +1,14 @@
+- name: Create database bkp directory
+  file:
+    path: /data/docker/backup/db
+    state: directory
+    recurse: yes
+  become: yes
+
+- name: Create wp bkp directory
+  file:
+    path: /data/docker/backup/html
+    state: directory
+    recurse: yes
+  become: yes
+    

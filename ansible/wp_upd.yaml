@@ -1,0 +1,139 @@
+---
+- hosts: project
+  gather_facts: False
+  tasks:
+
+  - name: Stop previous images
+    shell: "docker stop $(docker ps -a -q)"
+    failed_when: false
+    args:
+      chdir: /data/docker
+    become: yes  
+
+  - name: Remove previous images
+    shell: "docker rm $(docker ps -a -q)"
+    failed_when: false
+    args:
+      chdir: /data/docker
+    become: yes
+
+  - name: Restart Docker service
+    service:
+      name: docker
+      state: restarted
+      enabled: yes
+    become: yes
+
+    #  - name: Change timeout settings
+    #    shell: |
+    #      echo "DOCKER_CLIENT_TIMEOUT=120" > .env
+    #      echo "COMPOSE_HTTP_TIMEOUT=120" >> .env 
+    #    args:
+    #      chdir: /data/docker      
+    #    become: yes
+
+  - name: Copy docker-compose file for services updating
+    copy:
+      src: /var/lib/jenkins/hosting/docker-compose-upd.yaml
+      dest: /data/docker
+      owner: vagrant
+      group: vagrant
+      mode: 0644
+    become: yes
+
+  - name: Proxy build
+    shell: docker-compose -f docker-compose-proxy.yaml up -d
+    args:
+      chdir: /data/docker
+    become: yes
+
+  - name: Services update
+    shell: docker-compose -f docker-compose-upd.yaml up -d
+    args:
+      chdir: /data/docker
+    become: yes
+
+  - name: Pause 120
+    pause:
+      seconds: 120
+
+  - name: Test wp
+    block:
+      - name: Check content
+        uri:
+          url: "http://wp.local"
+          return_content: yes
+        register: content
+        failed_when: true
+        failed_when: "'WordPress' not in content.content"
+
+      - name: Check content
+        uri:
+          url: "http://phpmyadmin.local"
+          return_content: yes
+        register: content
+        failed_when: true
+        failed_when: "'phpMyAdmin' not in content.content"
+        
+
+      - name: Remove previous version
+        shell: |
+          rm -f docker-compose-serv.yaml    
+          mv -f docker-compose-upd.yaml docker-compose-serv.yaml
+        args:
+          chdir: /data/docker
+          warn: false
+        become: yes
+ 
+    rescue:
+        
+      - name: Stop wrong image
+        shell: docker-compose -f docker-compose-upd.yaml down
+        args:
+          chdir: /data/docker
+        become: yes
+
+      - name: Remove wrong image
+        shell: "docker rmi -f $(docker images -a -q)"
+        failed_when: false
+        become: yes
+
+      - name: Remove update file
+        shell: rm -f docker-compose_upd.yml
+        args:
+          chdir: /data/docker
+        become: yes
+
+      - name: Proxy build
+        shell: docker-compose -f docker-compose-proxy.yaml up -d
+        args:
+          chdir: /data/docker
+        become: yes
+
+      - name: Deploy previous version
+        shell: docker-compose -f docker-compose-serv.yaml up -d
+        args:
+          chdir: /data/docker
+          warn: false
+        become: yes  
+
+      - name: Pause 120
+        pause:
+          seconds: 120
+
+      - name: Test wp
+        block:
+          - name: Check content
+            uri:
+              url: "http://wp.local"
+              return_content: yes
+            register: content
+            failed_when: "'WordPress' not in content.content"
+      - name: Check content
+        uri:
+          url: "http://phpmyadmin.local"
+          return_content: yes
+        register: content
+        failed_when: true
+        failed_when: "'phpMyAdmin' not in content.content"
+            

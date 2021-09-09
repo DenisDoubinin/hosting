@@ -1,0 +1,14 @@
+- name: Create directory for database
+  file:
+    path: /data/docker/db
+    state: directory
+    recurse: yes
+  become: yes
+    
+- name: Create directory for wp
+  file:
+    path: /data/docker/html
+    state: directory
+    recurse: yes
+  become: yes
+    

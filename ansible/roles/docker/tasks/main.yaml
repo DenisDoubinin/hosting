@@ -1,0 +1,74 @@
+- name: Old version of Docker remove
+  apt:
+    name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc  
+      - docker-ce-cli
+      - containerd.io
+    state: absent
+    update_cache: yes
+  become: yes
+
+- name: Install docker requirements
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+  become: yes
+        
+- name: Set up docker repo
+  shell: |
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo \
+    "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+      
+    #- name: Docker Install
+    #  apt:
+    #    name:
+    #      - docker-ce
+    #      - docker-ce-cli
+    #      - containerd.io
+    #    state: present
+    #    update_cache: yes
+    #  become: yes
+
+- name: Docker-compose install
+  get_url: 
+    url : https://github.com/docker/compose/releases/download/1.27.4/docker-compose-Linux-x86_64
+    dest: /usr/bin/docker-compose
+    mode: 'u+x,g+x'  
+  become: yes
+
+- name: Enable docker and add user to docker group
+  shell: "sudo usermod -aG docker $USER"
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+  #- name: Change timeout settings
+  #  shell: |
+  #    echo "DOCKER_CLIENT_TIMEOUT=120" > .env
+  #    echo "COMPOSE_HTTP_TIMEOUT=120" >> .env
+  #  args:
+  #    chdir: /data/docker
+  #  become: yes
+  
+
+
+
+     

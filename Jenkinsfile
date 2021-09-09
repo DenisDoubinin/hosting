@@ -5,12 +5,7 @@ pipeline{
     stage('Clone git repo'){
       steps{
         git url: 'git@github.com:DenisDoubinin/hosting.git',
-          credentialsId: 'github-key'
-      }
-    }
-    stage('Create VM'){
-      steps{
-        sh 'vagrant up'
+          credentialsId: "scm-key"
       }
     }
     stage('Hosting deploy'){

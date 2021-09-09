@@ -8,9 +8,9 @@ pipeline{
           credentialsId: "scm-key"
       }
     }
-    stage('Hosting deploy'){
+    stage('Hosting update'){
       steps{
-        ansiblePlaybook credentialsId: 'jenkins_node', disableHostKeyChecking: true, installation: 'ansible', inventory: 'ansible/inv.yaml', playbook: 'ansible/wp.yaml'
+        ansiblePlaybook credentialsId: 'jenkins_node', disableHostKeyChecking: true, installation: 'ansible', inventory: 'ansible/inv.yaml', playbook: 'ansible/wp_upd.yaml'
       }
     }
   }
